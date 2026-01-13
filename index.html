@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NL+-——奶龙计算器</title>
+
+<style>
+/* ================== 全局 ================== */
+* {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+               "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  background:
+    radial-gradient(800px at 20% 10%, #e6f0ff, transparent 60%),
+    radial-gradient(800px at 80% 90%, #ffe6f2, transparent 60%),
+    linear-gradient(180deg, #f8fafc, #eef2f7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* ================== 玻璃容器 ================== */
+.calculator {
+  width: 320px;
+  padding: 20px;
+  border-radius: 28px;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.75),
+    rgba(255,255,255,0.35)
+  );
+  backdrop-filter: blur(14px) saturate(110%);
+  -webkit-backdrop-filter: blur(14px) saturate(110%);
+  box-shadow:
+    0 24px 60px rgba(15,23,42,0.15),
+    inset 0 0 0.5px rgba(255,255,255,0.8);
+  position: relative;
+}
+
+/* 玻璃边缘高光 */
+.calculator::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.9),
+    transparent 35%
+  );
+}
+
+/* ================== 历史记录 ================== */
+.history {
+  height: 22px;
+  margin-bottom: 6px;
+  padding-right: 4px;
+  text-align: right;
+  font-size: 14px;
+  color: rgba(15,23,42,0.55);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ================== 显示屏 ================== */
+.display {
+  height: 72px;
+  margin-bottom: 16px;
+  padding-right: 6px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  font-size: 42px;
+  font-weight: 300;
+  color: #0f172a;
+}
+
+.display span {
+  display: inline-block;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ================== 按钮网格 ================== */
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* ================== 按钮 ================== */
+button {
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  font-size: 22px;
+  color: #0f172a;
+  cursor: pointer;
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.85),
+    rgba(255,255,255,0.55)
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    inset 0 0 0.5px rgba(255,255,255,0.9),
+    0 6px 14px rgba(15,23,42,0.15);
+  transition:
+    transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.18s;
+}
+
+/* 液体按压 */
+button:active {
+  transform: scale(0.92);
+  box-shadow:
+    inset 0 0 1px rgba(255,255,255,1),
+    0 2px 6px rgba(15,23,42,0.2);
+}
+
+/* 功能键 */
+.func {
+  color: #475569;
+}
+
+/* 运算符 */
+.op {
+  background: linear-gradient(
+    145deg,
+    rgba(255,180,90,0.8),
+    rgba(255,140,60,0.75)
+  );
+  color: #1f1300;
+}
+
+/* 等号 */
+.equals {
+  background: linear-gradient(
+    145deg,
+    rgba(90,200,250,0.9),
+    rgba(60,150,255,0.85)
+  );
+  color: #001b2e;
+}
+
+/* 0 键 */
+.zero {
+  grid-column: span 2;
+  border-radius: 32px;
+  text-align: left;
+  padding-left: 26px;
+}
+
+/* ================== 底部开发者信息 ================== */
+.footer {
+  margin-top: 18px;
+  font-size: 12px;
+  color: rgba(15,23,42,0.45);
+  text-align: center;
+  user-select: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="calculator">
+  <div class="history" id="history"></div>
+  <div class="display"><span id="display">0</span></div>
+
+  <div class="buttons">
+    <button class="func" onclick="clearAll()">AC</button>
+    <button class="func" onclick="toggleSign()">±</button>
+    <button class="func" onclick="percent()">%</button>
+    <button class="op" onclick="setOp('/')">÷</button>
+
+    <button onclick="inputNum(7)">7</button>
+    <button onclick="inputNum(8)">8</button>
+    <button onclick="inputNum(9)">9</button>
+    <button class="op" onclick="setOp('*')">×</button>
+
+    <button onclick="inputNum(4)">4</button>
+    <button onclick="inputNum(5)">5</button>
+    <button onclick="inputNum(6)">6</button>
+    <button class="op" onclick="setOp('-')">−</button>
+
+    <button onclick="inputNum(1)">1</button>
+    <button onclick="inputNum(2)">2</button>
+    <button onclick="inputNum(3)">3</button>
+    <button class="op" onclick="setOp('+')">+</button>
+
+    <button class="zero" onclick="inputNum(0)">0</button>
+    <button onclick="inputDot()">.</button>
+    <button class="equals" onclick="calculate()">＝</button>
+  </div>
+</div>
+
+<div class="footer">
+  奶龙 · TG@NL78991 · 个人开发者
+</div>
+
+<script>
+let current = "0";
+let prev = null;
+let operator = null;
+let resetNext = false;
+
+const display = document.getElementById("display");
+const history = document.getElementById("history");
+
+function updateDisplay() {
+  display.textContent = current;
+  display.style.transform = "scale(1.04)";
+  setTimeout(() => display.style.transform = "scale(1)", 120);
+}
+
+function inputNum(num) {
+  if (resetNext) {
+    current = String(num);
+    resetNext = false;
+  } else {
+    current = current === "0" ? String(num) : current + num;
+  }
+  updateDisplay();
+}
+
+function inputDot() {
+  if (resetNext) {
+    current = "0.";
+    resetNext = false;
+  } else if (!current.includes(".")) {
+    current += ".";
+  }
+  updateDisplay();
+}
+
+function clearAll() {
+  current = "0";
+  prev = null;
+  operator = null;
+  history.textContent = "";
+  updateDisplay();
+}
+
+function toggleSign() {
+  current = String(parseFloat(current) * -1);
+  updateDisplay();
+}
+
+function percent() {
+  current = String(parseFloat(current) / 100);
+  updateDisplay();
+}
+
+function setOp(op) {
+  if (operator && !resetNext) calculate();
+  prev = parseFloat(current);
+  operator = op;
+  history.textContent = `${prev} ${symbol(op)}`;
+  resetNext = true;
+}
+
+function calculate() {
+  if (!operator || prev === null) return;
+
+  const curr = parseFloat(current);
+  let result = 0;
+
+  switch (operator) {
+    case "+": result = prev + curr; break;
+    case "-": result = prev - curr; break;
+    case "*": result = prev * curr; break;
+    case "/": result = curr === 0 ? 0 : prev / curr; break;
+  }
+
+  history.textContent = `${prev} ${symbol(operator)} ${curr} =`;
+  current = String(Number(result.toFixed(8)));
+  operator = null;
+  prev = null;
+  resetNext = true;
+  updateDisplay();
+}
+
+function symbol(op) {
+  return { "+": "+", "-": "−", "*": "×", "/": "÷" }[op];
+}
+</script>
+
+</body>
+</html>
